@@ -32,5 +32,27 @@ with open(DATA_PATH, 'r') as data:
 
 
 
+
+def is_note(object: any) -> bool:
+    if type(object) == str:
+        return True
+    return False
+
+
 for meeting in meetings:
-    print(meeting)
+    for tab in meetings[meeting]:
+        if is_note(meetings[meeting][tab]):
+            print(meetings[meeting][tab])
+        else:
+            for subtab in meetings[meeting][tab]:
+                if is_note(meetings[meeting][tab][subtab]):
+                    print(meetings[meeting][tab][subtab])
+                else:
+                    for note in meetings[meeting][tab][subtab]:
+                        print(meetings[meeting][tab][subtab][note])
+
+# print(is_note(meetings))
+# print(is_note(meetings['meeting_name_1']))
+# print(is_note(meetings['meeting_name_1']['tab_1']))
+# print(is_note(meetings['meeting_name_1']['tab_1']['topic_1']))
+# print(is_note(meetings['meeting_name_1']['tab_1']['topic_1']['item_1']))
