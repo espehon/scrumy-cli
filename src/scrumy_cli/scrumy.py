@@ -4,6 +4,10 @@
 import argparse
 import importlib.metadata
 
+
+from colorama import Fore, init
+init(autoreset = True)
+
 try:
     __version__ = f"scrumy {importlib.metadata.version('scrumy_cli')} from scrumy_cli"
 except importlib.metadata.PackageNotFoundError:
