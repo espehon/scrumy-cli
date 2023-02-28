@@ -40,23 +40,17 @@ def is_note(object: any) -> bool:
 
 
 for meeting in meetings:
-    print(meeting)
+    print(f"{str(' ' + meeting + ' ').center(60, '-')}")
     for tab in meetings[meeting]:
-        print(f"\t{tab}")
         if is_note(meetings[meeting][tab]):
-            print(f"\t\t{meetings[meeting][tab]}")
+            print(f"{tab}: {meetings[meeting][tab]}")
         else:
+            print(f"{tab}")
             for subtab in meetings[meeting][tab]:
-                print(f"\t\t{subtab}")
                 if is_note(meetings[meeting][tab][subtab]):
-                    print(f"\t\t\t{meetings[meeting][tab][subtab]}")
+                    print(f"{' '*4}{subtab}: {meetings[meeting][tab][subtab]}")
                 else:
+                    print(f"{' '*4}{subtab}")
                     for note in meetings[meeting][tab][subtab]:
-                        print(f"\t\t\t{note}")
-                        print(f"\t\t\t\t{meetings[meeting][tab][subtab][note]}")
+                        print(f"{' '*8}{note}: {meetings[meeting][tab][subtab][note]}")
 
-# print(is_note(meetings))
-# print(is_note(meetings['meeting_name_1']))
-# print(is_note(meetings['meeting_name_1']['tab_1']))
-# print(is_note(meetings['meeting_name_1']['tab_1']['topic_1']))
-# print(is_note(meetings['meeting_name_1']['tab_1']['topic_1']['item_1']))
