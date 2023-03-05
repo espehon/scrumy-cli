@@ -56,4 +56,17 @@ def print_meeting(meeting_name, meeting_date):
                         print(f"{' '*8}{note}: {record[tab][subtab][note]}")
 
 
+def pars_argv(args: list):
+    if str.lower(args[1]) == "new":
+        #TODO: #1 Create new meeting function
+        pass
+    elif str.lower(args[1]) in meetings:
+        #TODO: #2 Check for meeting notes for today
+        #TODO: #3 Create meeting note entry function
+        pass
+
+
+
+for arg in sys.argv:
+    print(f"{arg =}")
 print_meeting("meeting_name_1", "1")

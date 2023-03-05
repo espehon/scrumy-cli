@@ -17,11 +17,7 @@
         }
     },
     "1": {
-        "topic_1": {
-            "item_1": "Notes",
-            "item_2": "Notes",
-            "item_3": "Notes"
-        },
+        "topic_1": "Notes",
         "topic_2": {
             "item_1": "Notes",
             "item_2": "Notes",
