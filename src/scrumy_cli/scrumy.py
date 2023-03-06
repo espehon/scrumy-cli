@@ -26,6 +26,8 @@ except importlib.metadata.PackageNotFoundError:
 DATA_PATH = os.path.expanduser('~/github/scrumy/test/test.json')
 
 
+SCRUMY_KEYWORDS = ["new", "delete", "print", "echo", "output", "view"]
+
 
 with open(DATA_PATH, 'r') as data:
     meetings = json.load(data)
@@ -46,27 +48,73 @@ def print_meeting(meeting_name, meeting_date):
         if is_note(record[tab]):
             print(f"{tab}: {record[tab]}")
         else:
-            print(f"{tab}")
+            print(f"{tab}...")
             for subtab in record[tab]:
                 if is_note(record[tab][subtab]):
                     print(f"{' '*4}{subtab}: {record[tab][subtab]}")
                 else:
-                    print(f"{' '*4}{subtab}")
+                    print(f"{' '*4}{subtab}...")
                     for note in record[tab][subtab]:
                         print(f"{' '*8}{note}: {record[tab][subtab][note]}")
 
+def create_new_meeting(meeting_name: str):
+    r"""
+    Asserts name is not a keyword.
+    Asserts name is not already used.
+    Loops user entry until told to stop.
+    ']' followed by text is used to single new tab (indentation).
+        ']This is a new tab' 
+    '[' on a blank line is used to end current tab.
+    '[[' on a blank line returns to first level indentation
+    \\ is used to end entry
+    """
+
+    if meeting_name in SCRUMY_KEYWORDS:
+        print("Meeting name cannot be a keyword.")
+        print(f"{SCRUMY_KEYWORDS = }")
+        return 1
+    if meeting_name in meetings:
+        print("A meeting already exists with this name.")
+        return 1
+    user = 'none' # primed input for loop
+    while user.strip() != r"\\":
+        if user == '':
+            pass
+        elif user[0] == ']':
+            pass
+        elif user.strip() == '[':
+            pass
+        elif user.strip() == '[[':
+            pass
+        else:
+            pass
+
+        #TODO: write changes
+
+        user = input(">>> ")
+
+    
+    
 
 def pars_argv(args: list):
-    if str.lower(args[1]) == "new":
-        #TODO: #1 Create new meeting function
+    if len(args) == 1:
+        # print meeting names
         pass
-    elif str.lower(args[1]) in meetings:
+        return 0
+    if str.lower(args[1]) == "new" and len(args) == 3:
+        create_new_meeting(str.lower(args[2]))
+        pass
+        return 0
+    if str.lower(args[1]) in meetings:
         #TODO: #2 Check for meeting notes for today
         #TODO: #3 Create meeting note entry function
         pass
+        return 0
 
 
 
-for arg in sys.argv:
-    print(f"{arg =}")
-print_meeting("meeting_name_1", "1")
+# for arg in sys.argv:
+#     print(f"{arg =}")
+# print_meeting("meeting_name_1", "1")
+def cli():
+    pars_argv(sys.argv)
