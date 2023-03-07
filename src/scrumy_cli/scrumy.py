@@ -78,9 +78,10 @@ def create_new_meeting(meeting_name: str):
         return 1
     
     user = '' # priming for loop
-    indent_level = 1
+    indent_level = 0
+    meetings[meeting_name] = {}
     meetings[meeting_name]['template'] = {}
-    
+
     while user.strip() != r"\\":
         if user == '':
             pass
@@ -91,13 +92,14 @@ def create_new_meeting(meeting_name: str):
         elif user.strip() == '[[':
             pass
         else:
-            pass
+            meetings[meeting_name]['template'][user] = ''
 
         #TODO: write changes
 
-        user = input(">>> ")
+        user = input(f"{'    '*indent_level}> ")
 
-    
+    # testing 
+    print_meeting(meeting_name, 'template')
     
 
 def pars_argv(args: list):
