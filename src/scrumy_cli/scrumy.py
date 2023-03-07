@@ -5,6 +5,7 @@ import sys
 import os
 import argparse
 import json
+import datetime
 import importlib.metadata
 
 
@@ -24,9 +25,8 @@ except importlib.metadata.PackageNotFoundError:
 
 #DATA_PATH = os.path.expanduser('~/.local/share/scrumy/meetings.json')
 DATA_PATH = os.path.expanduser('~/github/scrumy/test/test.json')
-
-
 SCRUMY_KEYWORDS = ["new", "delete", "print", "echo", "output", "view"]
+TODAY = str(datetime.datetime.now().date())
 
 
 with open(DATA_PATH, 'r') as data:
@@ -76,7 +76,11 @@ def create_new_meeting(meeting_name: str):
     if meeting_name in meetings:
         print("A meeting already exists with this name.")
         return 1
-    user = 'none' # primed input for loop
+    
+    user = '' # priming for loop
+    indent_level = 1
+    meetings[meeting_name]['template'] = {}
+    
     while user.strip() != r"\\":
         if user == '':
             pass
