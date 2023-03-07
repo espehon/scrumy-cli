@@ -43,7 +43,7 @@ def is_note(object: any) -> bool:
 
 def print_meeting(meeting_name, meeting_date):
     record = meetings[meeting_name][meeting_date]
-    print(f"{str(' ' + meeting_name + ' ').center(60, '-')}")
+    print(f"{str(' ' + str.upper(meeting_name) + ' ').center(60, '-')}")
     for tab in record:
         if is_note(record[tab]):
             print(f"{tab}: {record[tab]}")
@@ -79,27 +79,36 @@ def create_new_meeting(meeting_name: str):
     
     user = '' # priming for loop
     indent_level = 0
+    indent_tabs = []
     meetings[meeting_name] = {}
     meetings[meeting_name]['template'] = {}
+    template = meetings[meeting_name]['template']
 
     while user.strip() != r"\\":
         if user == '':
             pass
         elif user[0] == ']':
-            pass
-        elif user.strip() == '[':
+            if indent_level > 2:
+                print(f"{Fore.YELLOW}{'    '*indent_level}Cannot indent further!")
+                user = ''
+            else:
+                indent_level += 1
+                template[user] = {}
+        elif user[0] == '[':
             pass
         elif user.strip() == '[[':
             pass
         else:
-            meetings[meeting_name]['template'][user] = ''
+            template[user] = ''
 
-        #TODO: write changes
-
+        if user != '':
+            print_meeting(meeting_name, 'template')
         user = input(f"{'    '*indent_level}> ")
 
     # testing 
-    print_meeting(meeting_name, 'template')
+    
+    
+    #TODO: write changes
     
 
 def pars_argv(args: list):
