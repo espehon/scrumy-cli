@@ -46,16 +46,16 @@ def print_meeting(meeting_name, meeting_date):
     print(f"{str(' ' + str.upper(meeting_name) + ' ').center(60, '-')}")
     for tab in record:
         if is_note(record[tab]):
-            print(f"{tab}: {record[tab]}")
+            print(f"{tab} - {record[tab]}")
         else:
-            print(f"{tab}...")
+            print(f"{tab}:")
             for subtab in record[tab]:
                 if is_note(record[tab][subtab]):
-                    print(f"{' '*4}{subtab}: {record[tab][subtab]}")
+                    print(f"{' '*4}{subtab} - {record[tab][subtab]}")
                 else:
-                    print(f"{' '*4}{subtab}...")
+                    print(f"{' '*4}{subtab}:")
                     for note in record[tab][subtab]:
-                        print(f"{' '*8}{note}: {record[tab][subtab][note]}")
+                        print(f"{' '*8}{note} - {record[tab][subtab][note]}")
 
 def create_new_meeting(meeting_name: str):
     r"""
