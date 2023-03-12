@@ -89,7 +89,7 @@ def create_new_meeting(meeting_name: str):
             pass
         elif user[0] == ']':
             user = user[1:]
-            if indent_level > 2:
+            if indent_level >= 2:
                 print(f"{Fore.YELLOW}{'    '*indent_level}Cannot indent further!")
                 user = ''
             else:
@@ -104,7 +104,13 @@ def create_new_meeting(meeting_name: str):
             indent_keys = []
             template[user] = ''
         elif user[0] == '[':
-            pass
+            if len(indent_keys) == 0:
+                print(f"{Fore.YELLOW}Already at root indentation!")
+                user = ''
+            elif len(indent_keys) == 1:
+                pass
+            elif len(indent_keys) == 2:
+                pass
         else:
             template[user] = ''
 
