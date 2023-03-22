@@ -114,7 +114,11 @@ def create_new_meeting(meeting_name: str):
                 indent_keys = []
                 template[user] = ''
             elif len(indent_keys) == 2:
-                pass
+                user = user[2:]
+                indent_level = 1
+                template = meetings[meeting_name][indent_keys.pop()]
+                template[user] = ''
+                
         else:
             template[user] = ''
 
