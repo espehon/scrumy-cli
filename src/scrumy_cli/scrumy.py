@@ -65,6 +65,8 @@ def print_meeting(meeting_name, meeting_date):
                     for note in record[tab][subtab]:
                         print(f"{' '*8}{note} - {record[tab][subtab][note]}")
 
+
+# testing new logic
 def create_new_meeting(meeting_name: str):
     r"""
     Asserts name is not a keyword.
