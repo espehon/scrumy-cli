@@ -7,6 +7,7 @@ import argparse
 import json
 import datetime
 import importlib.metadata
+import copy
 
 
 from colorama import Fore, init
@@ -39,6 +40,13 @@ def is_note(object: any) -> bool:
     if type(object) == str:
         return True
     return False
+
+def get_nested_dict(dictionary: dict, key_list: list) -> dict:
+    nested_dict = copy.deepcopy(dictionary)
+    if len(key_list) > 0:
+        for key in key_list:
+            nested_dict = nested_dict[key]
+    return nested_dict
 
 
 def print_meeting(meeting_name, meeting_date):
