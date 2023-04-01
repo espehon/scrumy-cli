@@ -88,13 +88,13 @@ def create_new_meeting(meeting_name: str):
         return 1
     
     user = '' # priming for loop
-    indent_level = 0
     indent_keys = []
     meetings[meeting_name] = {}
     meetings[meeting_name]['template'] = {}
     template = meetings[meeting_name]['template']
 
     while user.strip() != r"\\":
+        indent_level = len(indent_keys)
         if user == '':
             pass
         elif user[0] == ']':
@@ -103,10 +103,10 @@ def create_new_meeting(meeting_name: str):
                 print(f"{Fore.YELLOW}{'    '*indent_level}Cannot indent further!")
                 user = ''
             else:
-                indent_level += 1
                 template[user] = {}
                 template = template[user]
                 indent_keys.append(user)
+                indent_level = len(indent_keys)
         elif len(user) >= 2 and user[0:2] == '[[':
             user = user[2:]
             indent_level = 0
