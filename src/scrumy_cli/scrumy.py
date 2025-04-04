@@ -1,17 +1,16 @@
 # Copyright (c) 2023, espehon
 # License: https://www.gnu.org/licenses/gpl-3.0.html
 
-import sys
 import os
+import sys
 import argparse
 import json
-import datetime
 import importlib.metadata
-import copy
+
+import copykitten
+import questionary
 
 
-from colorama import Fore, init
-init(autoreset = True)
 
 try:
     __version__ = f"scrumy {importlib.metadata.version('scrumy_cli')} from scrumy_cli"
@@ -19,146 +18,119 @@ except importlib.metadata.PackageNotFoundError:
     __version__ = "Package not installed..."
 
 
+# Set master folder
+storage_folder = os.path.expanduser("~/.local/share/scrumy/")
+
+# Check if storage folder exists, create it if missing.
+if os.path.exists(os.path.expanduser(storage_folder)) == False:
+    os.makedirs(storage_folder)
+
+# Get list of sub-folders
+meeting_folders = [f for f in os.listdir(storage_folder) if os.path.isdir(os.path.join(storage_folder, f))]
+
+# Set wording for new meeting selection
+new_meeting_prompt = "Create a new meeting"
 
 
+# Set argument parsing
+parser = argparse.ArgumentParser(
+    description="Scrumy: Agile meeting notes and tasks from the commandline!",
+    epilog="(scrum with no arguments will start interactive selection)\n\nExample:\n> todo -n pi 3.14159265359\n> fet pi\n3.14159265359\n\nHomepage: https://github.com/espehon/fetchy-cli",
+    allow_abbrev=False,
+    add_help=False,
+    usage="todo [Name] [-n Name Value] [-c Name] [-d Name1 ...] [-r OldName NewName] [-l] [-?] ",
+    formatter_class=argparse.RawTextHelpFormatter
+)
+
+parser.add_argument('-?', '--help', action='help', help='Show this help message and exit.')
+parser.add_argument('-v', '--version', action='version', version=__version__, help="Show package version and exit.")
+parser.add_argument('-l', '--list', action='store_true', help='List meetings and exit.')
+parser.add_argument('-n', '--new', nargs='?', type=str, metavar='N', action='store', default=False, help='Create new meeting. Named [N] if supplied.')
+parser.add_argument('-r', '--rename', nargs=2, type=str, metavar=('O', 'N'), action='store', help='Rename [O] to [N].')
+parser.add_argument('-d', '--delete', nargs=1, metavar=('N1'), action='store', type=str, help='Delete [N].')
+parser.add_argument("name", nargs='?', help="Name of meeting to view. (Case sensitive)")
 
 
-
-#DATA_PATH = os.path.expanduser('~/.local/share/scrumy/meetings.json')
-DATA_PATH = os.path.expanduser('~/github/scrumy/test/test.json')
-SCRUMY_KEYWORDS = ["new", "delete", "print", "echo", "output", "view"]
-TODAY = str(datetime.datetime.now().date())
-
-
-with open(DATA_PATH, 'r') as data:
-    meetings = json.load(data)
-
-
-
-
-def is_note(object: any) -> bool:
-    if type(object) == str:
-        return True
-    return False
-
-def get_nested_dict(dictionary: dict, key_list: list) -> dict:
-    nested_dict = copy.deepcopy(dictionary)
-    if len(key_list) > 0:
-        for key in key_list:
-            nested_dict = nested_dict[key]
-    return nested_dict
-
-
-def print_meeting(meeting_name, meeting_date):
-    record = meetings[meeting_name][meeting_date]
-    print(f"{str(' ' + str.upper(meeting_name) + ' ').center(60, '-')}")
-    for tab in record:
-        if is_note(record[tab]):
-            print(f"{tab} - {record[tab]}")
+def interactive_select():
+    if len(meeting_folders) == 0:
+        if questionary.confirm('No meetings have been created yet. Would you like to make one now?', default=False, auto_enter=False).ask():
+            print('Start new meeting prompt.')
         else:
-            print(f"{tab}:")
-            for subtab in record[tab]:
-                if is_note(record[tab][subtab]):
-                    print(f"{' '*4}{subtab} - {record[tab][subtab]}")
-                else:
-                    print(f"{' '*4}{subtab}:")
-                    for note in record[tab][subtab]:
-                        print(f"{' '*8}{note} - {record[tab][subtab][note]}")
-
-def create_new_meeting(meeting_name: str):
-    r"""
-    Asserts name is not a keyword.
-    Asserts name is not already used.
-    Loops user entry until told to stop.
-    ']' followed by text is used to single new tab (indentation).
-        ']This is a new tab' 
-    '[' on a blank line is used to end current tab.
-    '[[' on a blank line returns to first level indentation
-    \\ is used to end entry
-    """
-
-    if meeting_name in SCRUMY_KEYWORDS:
-        print("Meeting name cannot be a keyword.")
-        print(f"{SCRUMY_KEYWORDS = }")
-        return 1
-    if meeting_name in meetings:
-        print("A meeting already exists with this name.")
-        return 1
-    
-    user = '' # priming for loop
-    indent_level = 0
-    indent_keys = []
-    meetings[meeting_name] = {}
-    meetings[meeting_name]['template'] = {}
-    template = meetings[meeting_name]['template']
-
-    while user.strip() != r"\\":
-        if user == '':
-            pass
-        elif user[0] == ']':
-            user = user[1:]
-            if indent_level >= 2:
-                print(f"{Fore.YELLOW}{'    '*indent_level}Cannot indent further!")
-                user = ''
-            else:
-                indent_level += 1
-                template[user] = {}
-                template = template[user]
-                indent_keys.append(user)
-        elif len(user) >= 2 and user[0:2] == '[[':
-            user = user[2:]
-            indent_level = 0
-            template = meetings[meeting_name]['template']
-            indent_keys = []
-            template[user] = ''
-        elif user[0] == '[':
-            if len(indent_keys) == 0:
-                print(f"{Fore.YELLOW}Already at root indentation!")
-                user = ''
-            elif len(indent_keys) == 1:
-                user = user[1:]
-                indent_level = 0
-                template = meetings[meeting_name]['template']
-                indent_keys = []
-                template[user] = ''
-            elif len(indent_keys) == 2:
-                user = user[2:]
-                indent_level = 1
-                template = meetings[meeting_name][indent_keys.pop()]
-                template[user] = ''
-                
+            sys.exit(0)
+    else:
+        selection = questionary.select("Select meeting...", choices=[meeting_folders.append(new_meeting_prompt)]).ask()
+        if selection == new_meeting_prompt:
+            print("Start new meeting prompt.")
+        elif selection in meeting_folders:
+            print("Start selected meeting.")
         else:
-            template[user] = ''
+            print("Invalid selection!")
+            sys.exit(1)
 
-        if user != '':
-            print_meeting(meeting_name, 'template')
-        user = input(f"{'    '*indent_level}> ").strip()
 
-    # testing 
+def create_new_meeting(meeting_name=None) -> bool:
+    """Create a new meeting (ask for name if one wasn't given).
+    Return True if successful and False if not"""
+
+    if meeting_name == None:
+        meeting_name = questionary.text("Enter the new meeting's name:").ask()
     
+    # Data validation
+    if type(meeting_name) == str:
+        meeting_name = meeting_name.strip()
+    if meeting_name == None or len(meeting_name) < 1:
+        print("No name was supplied. Aborting...")
+        sys.exit(0)
+    if meeting_name == new_meeting_prompt:
+        print(f"'{meeting_name}' is the trigger for a new meeting and is not allowed to be a meeting's name. Aborting...")
+        sys.exit(0)
+    if ' ' in meeting_name or '\t' in meeting_name:
+        if questionary.confirm("There are white spaces in this name. These will be replaced with underscores (_). Do you want to proceed?", default=True, auto_enter=False).ask():
+            meeting_name = meeting_name.replace(' ', '_')
+            meeting_name = meeting_name.replace('\t', '_')
+        else:
+            print("Aborting...")
+            sys.exit(0)
+    if meeting_name in meeting_folders:
+        print(f"'{meeting_name}' already exists! Aborting...")
+        sys.exit(0)
     
-    #TODO: write changes
+    # Finally we can create the folder
+    meeting_folder_path = storage_folder + meeting_name
+
+    try:
+        if os.path.exists(os.path.expanduser(meeting_folder_path)) == False:
+            os.makedirs(meeting_folder_path)
+            print(f"{meeting_name} directory created.")
+            with open(meeting_folder_path + 'Notes.txt', 'w'):
+                print("Notes.txt created.")
+            print("Still gotta do the tasks part") #TODO
+    except Exception as e:
+        print("An error occurred while trying to create the folder or files...")
+        print(e)
+        sys.exit(1)
+
+
+
+
+
+
+def cli(argv=None):
+    args = parser.parse_args(argv) #Execute parse_args()
+    print(args)
+    if len(sys.argv) == 1:
+        interactive_select()
+    elif args.list:
+        print('List meetings and exit.')
+    elif args.new or args.new == None:
+        if args.new:
+            print(f'Create {args.new}.')
+        else:
+            print('Start new meeting proc.')
+    elif args.rename:
+        print('Rename meeting.')
+    elif args.delete:
+        print('Delete meeting.')
+    elif args.name:
+        print(f'Start {args.name}.')
     
-
-def pars_argv(args: list):
-    if len(args) == 1:
-        # print meeting names
-        pass
-        return 0
-    if str.lower(args[1]) == "new" and len(args) == 3:
-        create_new_meeting(str.lower(args[2]))
-        pass
-        return 0
-    if str.lower(args[1]) in meetings:
-        #TODO: #2 Check for meeting notes for today
-        #TODO: #3 Create meeting note entry function
-        pass
-        return 0
-
-
-
-# for arg in sys.argv:
-#     print(f"{arg =}")
-# print_meeting("meeting_name_1", "1")
-def cli():
-    pars_argv(sys.argv)
