@@ -93,8 +93,8 @@ parser.add_argument('-?', '--help', action='help', help='Show this help message 
 parser.add_argument('-v', '--version', action='version', version=__version__, help="Show package version and exit.")
 parser.add_argument('-l', '--list', action='store_true', help='List meetings and exit.')
 parser.add_argument('-n', '--new', nargs='?', type=str, metavar='N', action='store', default=False, help='Create new meeting. Named [N] if supplied.')
-parser.add_argument('-r', '--rename', nargs=2, type=str, metavar=('O', 'N'), action='store', help='Rename [O] to [N].')
-parser.add_argument('-d', '--delete', nargs=1, metavar='N', action='store', type=str, help='Delete [N].')
+parser.add_argument('-r', '--rename', nargs=1, type=str, metavar='O', action='store', help='Rename [O]. (Will prompt for new name)')
+parser.add_argument('-d', '--delete', nargs=1, type=str, metavar='N', action='store', help='Delete [N].')
 parser.add_argument("name", nargs='?', help="Name of meeting to view. (Case sensitive)")
 
 def get_meeting_folders():
@@ -127,6 +127,27 @@ def interactive_select():
             print("Invalid selection!")
             sys.exit(1)
 
+def meeting_name_validation(meeting_name):
+    """Check if the meeting name is valid.
+    Returns a clean meeting name if valid, False otherwise."""
+    meeting_name = meeting_name.strip()
+    if meeting_name == None or len(meeting_name) < 1:
+        print("No name was supplied.")
+        return False
+    if meeting_name == new_meeting_prompt:
+        print(f"'{meeting_name}' is the trigger for a new meeting and is not allowed to be a meeting's name.")
+        return False
+    if ' ' in meeting_name or '\t' in meeting_name:
+        if questionary.confirm("There are white spaces in this name. These will be replaced with underscores (_). Do you want to proceed?", default=True, auto_enter=False).ask():
+            meeting_name = meeting_name.replace(' ', '_')
+            meeting_name = meeting_name.replace('\t', '_')
+        else:
+            return False
+    if meeting_name in get_meeting_folders():
+        print(f"'{meeting_name}' already exists!")
+        return False
+    return meeting_name
+
 
 def create_new_meeting(meeting_name=None) -> str:
     """Create a new meeting (ask for name if one wasn't given).
@@ -136,24 +157,10 @@ def create_new_meeting(meeting_name=None) -> str:
         meeting_name = questionary.text("Enter the new meeting's name:").ask()
     
     # Data validation
-    if type(meeting_name) == str:
-        meeting_name = meeting_name.strip()
-    if meeting_name == None or len(meeting_name) < 1:
-        print("No name was supplied. Aborting...")
-        sys.exit(0)
-    if meeting_name == new_meeting_prompt:
-        print(f"'{meeting_name}' is the trigger for a new meeting and is not allowed to be a meeting's name. Aborting...")
-        sys.exit(0)
-    if ' ' in meeting_name or '\t' in meeting_name:
-        if questionary.confirm("There are white spaces in this name. These will be replaced with underscores (_). Do you want to proceed?", default=True, auto_enter=False).ask():
-            meeting_name = meeting_name.replace(' ', '_')
-            meeting_name = meeting_name.replace('\t', '_')
-        else:
-            print("Aborting...")
-            sys.exit(0)
-    if meeting_name in get_meeting_folders():
-        print(f"'{meeting_name}' already exists! Aborting...")
-        sys.exit(0)
+    meeting_name = meeting_name_validation(meeting_name)
+    if meeting_name == False or meeting_name == None:
+        print("Aborting...")
+        sys.exit(1)
     
     # Finally we can create the folder
     meeting_folder_path = os.path.join(storage_folder, meeting_name)
@@ -199,6 +206,31 @@ def render_meeting(meeting_name):
 
     except AssertionError:
         print(f"{meeting_name} not found in {storage_folder}")
+        sys.exit(1)
+
+
+def rename_meeting(old_name):
+    """Rename a meeting folder. This will rename the folder"""
+    old_meeting_path = os.path.join(storage_folder, old_name)
+    if os.path.exists(old_meeting_path) == False:
+        print(f"{old_name} not found in {storage_folder}")
+        sys.exit(1)
+    try:
+        new_name = questionary.text(f"Enter the new name for {old_name}:").ask()
+        new_name = meeting_name_validation(new_name)
+        if new_name == False or new_name == None:
+            print("Aborting...")
+            sys.exit(1)
+        assert old_name != new_name
+        new_meeting_path = os.path.join(storage_folder, new_name)
+        shutil.move(old_meeting_path, new_meeting_path)  # Use shutil.move to rename the folder
+        print(f"{old_name} renamed to {new_name}.")
+    except AssertionError:
+        print(f"Invalid name: {new_name} is the same as {old_name}")
+        sys.exit(1)
+    except Exception as e:
+        print("An error occurred while trying to rename the folder...")
+        print(e)
         sys.exit(1)
 
 
@@ -262,7 +294,7 @@ def cli(argv=None):
         meeting_name = create_new_meeting(args.new)
         run_meeting(meeting_name)
     elif args.rename:
-        print('Rename meeting.')
+        rename_meeting(args.rename[0])
     elif args.delete:
         delete_meeting(args.delete[0])
     elif args.name:
