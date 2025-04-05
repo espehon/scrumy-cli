@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import json
+import shutil
 import importlib.metadata
 
 # import copykitten
@@ -37,7 +38,7 @@ DEFAULT_SETTINGS = {
 
 
 # Set config file
-config_path = os.path.expanduser("~/.config/scrumy/")
+config_path = os.path.expanduser("~/.config/scrumy/").replace("\\", "/")
 if os.path.exists(config_path) == False:
     print(f"Initializing config path at '{config_path}'")
     os.makedirs(config_path)
@@ -63,7 +64,7 @@ for key in DEFAULT_SETTINGS:
 
 
 # Set master folder
-storage_folder = os.path.expanduser(settings['storage_path'])
+storage_folder = os.path.expanduser(settings['storage_path']).replace("\\", "/")
 
 # Check if storage folder exists, create it if missing.
 if os.path.exists(os.path.expanduser(storage_folder)) == False:
@@ -93,7 +94,7 @@ parser.add_argument('-v', '--version', action='version', version=__version__, he
 parser.add_argument('-l', '--list', action='store_true', help='List meetings and exit.')
 parser.add_argument('-n', '--new', nargs='?', type=str, metavar='N', action='store', default=False, help='Create new meeting. Named [N] if supplied.')
 parser.add_argument('-r', '--rename', nargs=2, type=str, metavar=('O', 'N'), action='store', help='Rename [O] to [N].')
-parser.add_argument('-d', '--delete', nargs=1, metavar=('N1'), action='store', type=str, help='Delete [N].')
+parser.add_argument('-d', '--delete', nargs=1, metavar='N', action='store', type=str, help='Delete [N].')
 parser.add_argument("name", nargs='?', help="Name of meeting to view. (Case sensitive)")
 
 def get_meeting_folders():
@@ -201,6 +202,29 @@ def render_meeting(meeting_name):
         sys.exit(1)
 
 
+def delete_meeting(meeting_name):
+    """Delete the meeting folder and all its contents."""
+    meeting_path = os.path.join(storage_folder, meeting_name)
+    if os.path.exists(meeting_path) == False:
+        print(f"{meeting_name} not found in {storage_folder}")
+        sys.exit(1)
+    try:
+        render_meeting(meeting_name)
+        print(f"\n{Fore.LIGHTYELLOW_EX} Warning: This will delete the above meeting!")
+        user = questionary.confirm(f"Are you sure you want to delete {meeting_name}?", default=False, auto_enter=False).ask()
+        if user == False:
+            print("Aborting...")
+        elif user == True:
+            shutil.rmtree(meeting_path)  # Use shutil.rmtree to delete non-empty directories
+            print(f"{meeting_name} deleted.")
+        else:
+            print("Invalid choice!")
+    except Exception as e:
+        print("An error occurred while trying to delete the folder...")
+        print(e)
+        sys.exit(1)
+
+
 def run_meeting(meeting_name):
     """This is the main meeting function.
     This will loop rendering the meetings then running the prompt process"""
@@ -240,7 +264,7 @@ def cli(argv=None):
     elif args.rename:
         print('Rename meeting.')
     elif args.delete:
-        print('Delete meeting.')
+        delete_meeting(args.delete[0])
     elif args.name:
         run_meeting(args.name)
     
