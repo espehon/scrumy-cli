@@ -70,8 +70,6 @@ if os.path.exists(os.path.expanduser(storage_folder)) == False:
     print(f"Storage path '{storage_folder}' is missing! Creating path...")
     os.makedirs(storage_folder)
 
-# Get list of sub-folders
-meeting_folders = [f for f in os.listdir(storage_folder) if os.path.isdir(os.path.join(storage_folder, f))]
 
 # Set wording for new meeting selection
 new_meeting_prompt = "Create a new meeting"
@@ -98,16 +96,28 @@ parser.add_argument('-r', '--rename', nargs=2, type=str, metavar=('O', 'N'), act
 parser.add_argument('-d', '--delete', nargs=1, metavar=('N1'), action='store', type=str, help='Delete [N].')
 parser.add_argument("name", nargs='?', help="Name of meeting to view. (Case sensitive)")
 
+def get_meeting_folders():
+    """Get all meeting folders in the storage folder.
+    Returns a list of meeting names."""
+    meeting_folders = [f for f in os.listdir(storage_folder) if os.path.isdir(os.path.join(storage_folder, f))]
+    return meeting_folders
 
+def is_meeting_foler(meeting_name):
+    meeting_folders = get_meeting_folders()
+    if meeting_name in meeting_folders:
+        return True
+    return False
 
 def interactive_select():
+    meeting_folders = get_meeting_folders()
     if len(meeting_folders) == 0:
         if questionary.confirm('No meetings have been created yet. Would you like to make one now?', default=False, auto_enter=False).ask():
             return create_new_meeting()
         else:
             sys.exit(0)
     else:
-        selection = questionary.select("Select meeting...", choices=[meeting_folders.append(new_meeting_prompt)]).ask()
+        meeting_folders.append(new_meeting_prompt)
+        selection = questionary.select("Select meeting...", choices=meeting_folders).ask()
         if selection == new_meeting_prompt:
             return create_new_meeting()
         elif selection in meeting_folders:
@@ -140,7 +150,7 @@ def create_new_meeting(meeting_name=None) -> str:
         else:
             print("Aborting...")
             sys.exit(0)
-    if meeting_name in meeting_folders:
+    if meeting_name in get_meeting_folders():
         print(f"'{meeting_name}' already exists! Aborting...")
         sys.exit(0)
     
@@ -151,7 +161,9 @@ def create_new_meeting(meeting_name=None) -> str:
         if os.path.exists(meeting_folder_path) == False:
             os.makedirs(meeting_folder_path)
             print(f"{meeting_name} directory created.")
-            with open(meeting_folder_path + 'Notes.txt', 'w'):
+        note_file_path = os.path.join(meeting_folder_path, 'Notes.txt')
+        if os.path.exists(note_file_path) == False:
+            with open(note_file_path, 'w'):
                 print("Notes.txt created.")
             #TODO: create tasks file
     except Exception as e:
@@ -162,8 +174,8 @@ def create_new_meeting(meeting_name=None) -> str:
 
 def render_meeting(meeting_name):
     try:
-        assert meeting_name in storage_folder
         meeting_path = os.path.join(storage_folder, meeting_name)
+        assert os.path.exists(meeting_path)
         note_file = os.path.join(meeting_path, 'Notes.txt')
 
         if os.path.exists(note_file) == False:
@@ -192,7 +204,7 @@ def render_meeting(meeting_name):
 def run_meeting(meeting_name):
     """This is the main meeting function.
     This will loop rendering the meetings then running the prompt process"""
-
+    meeting_folders = get_meeting_folders()
     try:
         assert meeting_name in meeting_folders
         while True:
@@ -219,7 +231,7 @@ def cli(argv=None):
         run_meeting(meeting_name)
     elif args.list:
         print('Meetings:')
-        for meeting in meeting_folders:
+        for meeting in get_meeting_folders():
             print(f"    {meeting}")
         print() # padding
     elif args.new or args.new == None:
