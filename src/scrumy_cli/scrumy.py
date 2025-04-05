@@ -93,10 +93,16 @@ except FileNotFoundError:
     settings = {} # Return empty dictionary if file doesn't exist
 
 # Validate settings
+missing_settings = []
 for key in DEFAULT_SETTINGS:
     if key not in settings:
         print(f"The settings file is missing {key}! Restoring defaults...")
         settings[key] = DEFAULT_SETTINGS[key]
+        missing_settings.append(key)
+if len(missing_settings) > 0:
+    with open(config_path, 'w') as file:
+        print(f"Saving settings: {missing_settings}")
+        json.dump(settings, file, indent=4)
 
 
 # Set master folder
