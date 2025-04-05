@@ -33,7 +33,43 @@ DEFAULT_SETTINGS = {
                     'escape_characters': [
                         '\\',
                         '`'
-                    ]
+                    ],
+                    'editors': [
+                        'vim',
+                        'nano',
+                        'emacs',
+                        'micro',
+                        'ne',
+                        'joe',
+                        'ed',
+                        'kak'
+                    ],
+                    'scrumy_commands': {
+                        'notes_mode': [
+                            'n',
+                            'note',
+                            'notes',
+                            'edit'
+                        ],
+                        'tasks_mode': [
+                            't',
+                            'task',
+                            'tasks'
+                        ],
+                        'exit': [
+                            'q',
+                            'quit',
+                            'exit',
+                            'abort',
+                            'cancel',
+                            'stop'
+                        ],
+                        'help': [
+                            'h',
+                            'help',
+                            '?'
+                        ]
+                    }
 }
 
 
@@ -59,7 +95,7 @@ except FileNotFoundError:
 # Validate settings
 for key in DEFAULT_SETTINGS:
     if key not in settings:
-        print(f"The settings file is missing {key}! Using defaults...")
+        print(f"The settings file is missing {key}! Restoring defaults...")
         settings[key] = DEFAULT_SETTINGS[key]
 
 
@@ -265,8 +301,7 @@ def run_meeting(meeting_name):
         assert meeting_name in meeting_folders
         while True:
             render_meeting(meeting_name)
-            #TODO: prompt()
-            input("This is a placeholder to pause the loop in (Ctrl + C to exit)")
+            meeting_command_prompt(meeting_name)
 
 
     except AssertionError:
@@ -274,6 +309,57 @@ def run_meeting(meeting_name):
         sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(0)
+
+
+def clear_screen():
+    """Clear the screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def meeting_command_prompt(meeting_name):
+    """This is the command prompt for the meeting.
+    This is where the user will enter commands to edit and interact with the meeting."""
+    try:
+        user = input("Scrumy> ").strip()
+        if user.lower() in settings['scrumy_commands']['notes_mode']:
+            edit_notes(meeting_name)
+            clear_screen()
+        elif user.lower() in settings['scrumy_commands']['tasks_mode']:
+            print("Tasks mode not implemented yet...") #TODO: implement tasks mode
+        elif user.lower() in settings['scrumy_commands']['exit']:
+            print("Exiting...")
+            sys.exit(0)
+        elif user.lower() in settings['scrumy_commands']['help']:
+            print("Scrumy commands:")
+            for command in settings['scrumy_commands']:
+                print(f"    {command}: {settings['scrumy_commands'][command]}")
+            questionary.press_any_key_to_continue().ask()
+        else:
+            print(f"Invalid command: '{user}'\nTry '?' for help.")
+            questionary.press_any_key_to_continue().ask()
+    except KeyboardInterrupt:
+        print("Exiting...")
+        sys.exit(0)
+
+def edit_notes(meeting_name):
+    """This will open the notes file in the default editor."""
+    meeting_path = os.path.join(storage_folder, meeting_name)
+    note_file = os.path.join(meeting_path, 'Notes.txt')
+    if os.path.exists(note_file) == False:
+        print(f"{note_file} is missing!")
+        return
+    try:
+        editor = None
+        for editor_name in settings['editors']:
+            if shutil.which(editor_name) is not None:
+                editor = editor_name
+                break
+        if editor is None:
+            editor = os.environ.get('EDITOR') or 'notepad'  # Fallback to default editor if none found or notepad as a last resort
+        os.system(f"{editor} {note_file}")
+    except Exception as e:
+        print("An error occurred while trying to open the file...")
+        print(e)
 
 
 
