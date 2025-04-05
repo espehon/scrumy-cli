@@ -7,7 +7,7 @@ import argparse
 import json
 import importlib.metadata
 
-import copykitten
+# import copykitten
 import questionary
 
 
@@ -18,11 +18,54 @@ except importlib.metadata.PackageNotFoundError:
     __version__ = "Package not installed..."
 
 
+DEFAULT_SETTINGS = {
+                    'storage_path': '~/.local/share/scrumy/',
+                    'hightlight_tags': {
+                        '!': 'brightred',
+                        '@': 'cyan',
+                        '#': 'brightwhite',
+                        '$': 'brightgreen',
+                        '%': 'brightyellow'
+                    },
+                    'escape_characters': [
+                        '\\',
+                        '`'
+                    ]
+}
+
+
+# Set config file
+config_path = os.path.expanduser("~/.config/scrumy/")
+if os.path.exists(config_path) == False:
+    print(f"Initializing config path at '{config_path}'")
+    os.makedirs(config_path)
+config_path = os.path.join(config_path, 'settings.json')
+if os.path.exists(config_path) == False:
+    with open(config_path, 'w') as file:
+        print(f"Initializing config file at '{config_path}'")
+        json.dump(DEFAULT_SETTINGS, file, indent=4)
+
+# Load configs
+try:
+    with open(config_path, 'r') as file:
+        settings = json.load(file)
+except FileNotFoundError:
+    print("Config file missing!") # This should never happen as the previous block checks and creates the file if missing
+    settings = {} # Return empty dictionary if file doesn't exist
+
+# Validate settings
+for key in DEFAULT_SETTINGS:
+    if key not in settings:
+        print(f"The settings file is missing {key}! Using defaults...")
+        settings[key] = DEFAULT_SETTINGS[key]
+
+
 # Set master folder
-storage_folder = os.path.expanduser("~/.local/share/scrumy/")
+storage_folder = os.path.expanduser(settings['storage_path'])
 
 # Check if storage folder exists, create it if missing.
 if os.path.exists(os.path.expanduser(storage_folder)) == False:
+    print(f"Storage path '{storage_folder}' is missing! Creating path...")
     os.makedirs(storage_folder)
 
 # Get list of sub-folders
