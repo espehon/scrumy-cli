@@ -9,6 +9,8 @@ import importlib.metadata
 
 # import copykitten
 import questionary
+from colorama import Fore, Style, init
+init(autoreset=True)
 
 
 
@@ -74,6 +76,9 @@ meeting_folders = [f for f in os.listdir(storage_folder) if os.path.isdir(os.pat
 # Set wording for new meeting selection
 new_meeting_prompt = "Create a new meeting"
 
+# get terminal width
+terminal_width = os.get_terminal_size().columns
+
 
 # Set argument parsing
 parser = argparse.ArgumentParser(
@@ -94,26 +99,27 @@ parser.add_argument('-d', '--delete', nargs=1, metavar=('N1'), action='store', t
 parser.add_argument("name", nargs='?', help="Name of meeting to view. (Case sensitive)")
 
 
+
 def interactive_select():
     if len(meeting_folders) == 0:
         if questionary.confirm('No meetings have been created yet. Would you like to make one now?', default=False, auto_enter=False).ask():
-            print('Start new meeting prompt.')
+            return create_new_meeting()
         else:
             sys.exit(0)
     else:
         selection = questionary.select("Select meeting...", choices=[meeting_folders.append(new_meeting_prompt)]).ask()
         if selection == new_meeting_prompt:
-            print("Start new meeting prompt.")
+            return create_new_meeting()
         elif selection in meeting_folders:
-            print("Start selected meeting.")
+            return selection
         else:
             print("Invalid selection!")
             sys.exit(1)
 
 
-def create_new_meeting(meeting_name=None) -> bool:
+def create_new_meeting(meeting_name=None) -> str:
     """Create a new meeting (ask for name if one wasn't given).
-    Return True if successful and False if not"""
+    Returns meeting name if successful"""
 
     if meeting_name == None:
         meeting_name = questionary.text("Enter the new meeting's name:").ask()
@@ -139,20 +145,67 @@ def create_new_meeting(meeting_name=None) -> bool:
         sys.exit(0)
     
     # Finally we can create the folder
-    meeting_folder_path = storage_folder + meeting_name
+    meeting_folder_path = os.path.join(storage_folder, meeting_name)
 
     try:
-        if os.path.exists(os.path.expanduser(meeting_folder_path)) == False:
+        if os.path.exists(meeting_folder_path) == False:
             os.makedirs(meeting_folder_path)
             print(f"{meeting_name} directory created.")
             with open(meeting_folder_path + 'Notes.txt', 'w'):
                 print("Notes.txt created.")
-            print("Still gotta do the tasks part") #TODO
+            #TODO: create tasks file
     except Exception as e:
         print("An error occurred while trying to create the folder or files...")
         print(e)
         sys.exit(1)
+    return meeting_name
 
+def render_meeting(meeting_name):
+    try:
+        assert meeting_name in storage_folder
+        meeting_path = os.path.join(storage_folder, meeting_name)
+        note_file = os.path.join(meeting_path, 'Notes.txt')
+
+        if os.path.exists(note_file) == False:
+            with open(note_file, 'w') as file:
+                print(f"{note_file} is missing! Creating blank note file...")
+        with open(note_file, 'r') as file:
+            notes = file.read()
+
+        #TODO: check for and read in tasks file
+
+        print('\n' * 4) # add some blank lines for visual padding
+        print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
+        print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
+        print(notes) # Notes
+        print() # Padding
+        print('    ' + Fore.LIGHTWHITE_EX + '[Tasks]') # Tasks header
+        #TODO: render tasks
+        print() # Last padding
+
+
+    except AssertionError:
+        print(f"{meeting_name} not found in {storage_folder}")
+        sys.exit(1)
+
+
+def run_meeting(meeting_name):
+    """This is the main meeting function.
+    This will loop rendering the meetings then running the prompt process"""
+
+    try:
+        assert meeting_name in meeting_folders
+        while True:
+            render_meeting(meeting_name)
+            #TODO: prompt()
+            input("This is a placeholder to pause the loop in (Ctrl + C to exit)")
+
+
+    except AssertionError:
+        print(f"Invalid meeting name: {meeting_name}")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(0)
 
 
 
@@ -162,18 +215,20 @@ def cli(argv=None):
     args = parser.parse_args(argv) #Execute parse_args()
     print(args)
     if len(sys.argv) == 1:
-        interactive_select()
+        meeting_name = interactive_select()
+        run_meeting(meeting_name)
     elif args.list:
-        print('List meetings and exit.')
+        print('Meetings:')
+        for meeting in meeting_folders:
+            print(f"    {meeting}")
+        print() # padding
     elif args.new or args.new == None:
-        if args.new:
-            print(f'Create {args.new}.')
-        else:
-            print('Start new meeting proc.')
+        meeting_name = create_new_meeting(args.new)
+        run_meeting(meeting_name)
     elif args.rename:
         print('Rename meeting.')
     elif args.delete:
         print('Delete meeting.')
     elif args.name:
-        print(f'Start {args.name}.')
+        run_meeting(args.name)
     
