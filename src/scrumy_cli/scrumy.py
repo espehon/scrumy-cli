@@ -35,6 +35,7 @@ DEFAULT_SETTINGS = {
                         '\\',
                         '`'
                     ],
+                    'meeting_cadence': 1,
                     'editors': [
                         'vim',
                         'nano',
