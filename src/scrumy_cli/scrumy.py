@@ -408,6 +408,17 @@ def get_formatted_task(key, tasks) -> str:
     return task_formatted
 
 
+def get_age_color(age: int, color_dict: dict) -> str:
+    age = str(age)
+    try:
+        output = color_dict[age]
+    except Exception as e:
+        print('Age coloring failed!')
+        print(e)
+        output = ''
+    return output
+
+
 def task_mode(meeting_name):
     """This is the task mode for the meeting.
     This is where the user can create and edit tasks."""
