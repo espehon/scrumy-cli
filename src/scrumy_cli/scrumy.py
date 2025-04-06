@@ -308,7 +308,6 @@ def render_meeting(meeting_name):
         with open(task_file, 'r') as file:
             tasks = json.load(file)
 
-        print('\n' * 4) # add some blank lines for visual padding
         print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
         print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
         print(notes) # Notes
@@ -349,18 +348,20 @@ def task_mode(meeting_name):
         return
     try:
         with open(task_file, 'r') as file:
-            tasks = json.load(file)
+            tasks_json = json.load(file)
     except Exception as e:
         print("An error occurred while trying to open the file...")
         print(e)
-    if len(tasks) == 0:
-        task_list = []
-    else:
-        task_list = list(tasks.keys())
-    task_list.append('Add new task')
-    user = questionary.select("Select task...", choices=task_list).ask()
+    task_list_formatted = []
+    if len(tasks_json) > 0:
+        for task_key in tasks_json:
+            task_formatted = f"{task_key.rjust(2)} {settings['task_types'][tasks_json[task_key]['type']]['statuses'][tasks_json[task_key]['status']]['icon']} {tasks_json[task_key]['description']}"
+            task_list_formatted.append(task_formatted)
+
+    task_list_formatted.append('Add new task')
+    user = questionary.select("Select task...", choices=task_list_formatted).ask()
     if user == 'Add new task':
-        task_indies = index_data(tasks)
+        task_indies = index_data(tasks_json)
         if len(task_indies) > 0:
             next_key = max(task_indies) + 1
         else:
@@ -368,17 +369,33 @@ def task_mode(meeting_name):
         
         new_task = create_new_task()
         if type(new_task) == dict:
-            tasks[next_key] = new_task
+            tasks_json[str(next_key)] = new_task
     
-    elif user in task_list:
-        task_index = task_list.index(user)
-        task_key = task_list[task_index]
-        task = tasks[task_key]
-        print(f"Task: {task}")
-        if questionary.confirm("Do you want to edit this task?", default=False, auto_enter=False).ask():
-            new_task = create_new_task()
-            if type(new_task) == dict:
-                tasks[task_key] = new_task
+    elif user in task_list_formatted:
+        task_index = str(task_list_formatted.index(user))
+        new_status = questionary.select("Update status to...", choices=settings['task_types'][tasks_json[task_index]['type']]['statuses'].keys()).ask()
+        if new_status == None:
+            return
+        else:
+            tasks_json[task_index]['status'] = new_status
+            # Check if the new_status is the last status in the list of statuses
+            statuses = list(settings['task_types'][tasks_json[task_index]['type']]['statuses'].keys())
+            if new_status == statuses[-1]:  # Compare with the last status
+                user = questionary.text("Enter result (optional):").ask()
+                tasks_json[task_index]['result'] = user
+                # Set the completed_date to the current date
+                tasks_json[task_index]['completed_date'] = datetime.datetime.now().strftime("%Y-%m-%d")
+    else:
+        print("Invalid selection!")
+        return
+    try:
+        with open(task_file, 'w') as file:
+            json.dump(tasks_json, file, indent=4)
+            print(f"Tasks updated in {task_file}")
+    except Exception as e:
+        print("An error occurred while trying to save the file...")
+        print(e)
+
 
 def create_new_task():
     """Create a new task for the meeting.
@@ -387,9 +404,10 @@ def create_new_task():
     try:
         task_object['type'] = questionary.select("Select task type...", choices=['Action Item', 'Question']).ask()
         assert task_object['type'] != None
-        task_object['created_date'] = datetime.datetime.now().date("%Y-%m-%d")
+        task_object['created_date'] = datetime.datetime.now().strftime("%Y-%m-%d")
         task_object['completed_date'] = None
-        task_object['status'] = task_object['type']['statuses'].keys()[0]
+        task_object['status'] = list(settings['task_types'][task_object['type']]['statuses'].keys())[0]
+        # task_object['icon'] = task_object['type']['statuses'][task_object['status']]['icon']
         task_object['description'] = questionary.text("Enter description:").ask()
         assert len(task_object['description'] ) > 0
         task_object['result'] = None
@@ -454,6 +472,7 @@ def run_meeting(meeting_name):
     meeting_folders = get_meeting_folders()
     try:
         assert meeting_name in meeting_folders
+        print('\n' * 4) # add some blank lines for visual padding
         while True:
             render_meeting(meeting_name)
             meeting_command_prompt(meeting_name)
@@ -478,7 +497,7 @@ def meeting_command_prompt(meeting_name):
             edit_notes(meeting_name)
             clear_screen()
         elif user.lower() in settings['scrumy_commands']['tasks_mode']:
-            print("Tasks mode not implemented yet...") #TODO: implement tasks mode
+            task_mode(meeting_name)
         elif user.lower() in settings['scrumy_commands']['exit']:
             print("Exiting...")
             sys.exit(0)
