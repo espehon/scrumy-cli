@@ -213,6 +213,19 @@ def is_meeting_foler(meeting_name):
         return True
     return False
 
+
+def date_difference(first_date, second_date) -> int:
+    try:
+        output = first_date - second_date
+        assert type(output) == int
+        return output
+    except AssertionError:
+        print("Date difference calculation did not return an integer!")
+    except Exception as e:
+        print("Date difference failed!")
+        print(e)
+        return None
+
 def interactive_select():
     meeting_folders = get_meeting_folders()
     if len(meeting_folders) == 0:
