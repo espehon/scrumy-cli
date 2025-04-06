@@ -317,7 +317,7 @@ def render_meeting(meeting_name):
             print('None')
         else:
             for task in tasks:
-                print(task)
+                print(get_formatted_task(task, tasks)) # Tasks
         print() # Last padding
 
     except AssertionError:
@@ -336,6 +336,22 @@ def index_data(current_dict: dict) -> list:
     return output
 
 
+def get_formatted_task(key, tasks) -> str:
+    # Extract task details
+    task = tasks[key]
+    status = task['status']
+    task_type = task['type']
+    description = task['description']
+    result = task.get('result', None)  # Default to None if result is not set
+    result_str = f": {result}" if result else ""  # Include ': {result}' only if result is not None
+
+    # Get color and icon from settings
+    color = COLORS[settings['task_types'][task_type]['statuses'][status]['color']]
+    icon = settings['task_types'][task_type]['statuses'][status]['icon']
+
+    # Format the task string
+    task_formatted = f"{key.rjust(2)} {color}{icon}{Style.RESET_ALL} {description} {result_str}"
+    return task_formatted
 
 
 def task_mode(meeting_name):
