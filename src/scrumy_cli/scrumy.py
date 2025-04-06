@@ -71,7 +71,7 @@ DEFAULT_SETTINGS = {
                             '?'
                         ]
                     },
-                    'age_color': {
+                    'age_colors': {
                         '0': None,
                         '1': 'bright_white',
                         '2': 'bright_yellow',
@@ -408,10 +408,11 @@ def get_formatted_task(key, tasks) -> str:
     return task_formatted
 
 
-def get_age_color(age: int, color_dict: dict) -> str:
+def get_age_color(age: int) -> str:
     age = str(age)
     try:
-        output = color_dict[age]
+        color_name = settings['age_colors'][age]
+        output = COLORS['color_name']
     except Exception as e:
         print('Age coloring failed!')
         print(e)
