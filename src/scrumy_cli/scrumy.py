@@ -218,6 +218,7 @@ def is_meeting_foler(meeting_name):
 def date_difference(first_date, second_date) -> int:
     try:
         output = first_date - second_date
+        output = output.days
         assert type(output) == int
         return output
     except AssertionError:
@@ -357,14 +358,21 @@ def get_formatted_task(key, tasks) -> str:
     task_type = task['type']
     description = task['description']
     result = task.get('result', None)  # Default to None if result is not set
-    result_str = f": {result}" if result else ""  # Include ': {result}' only if result is not None
+    result_str = f" : {result}" if result else ""  # Include ': {result}' only if result is not None
 
     # Get color and icon from settings
-    color = COLORS[settings['task_types'][task_type]['statuses'][status]['color']]
+    icon_color = COLORS[settings['task_types'][task_type]['statuses'][status]['color']]
     icon = settings['task_types'][task_type]['statuses'][status]['icon']
 
+    # Get age and format
+    age_days = date_difference(datetime.datetime.strptime(task['created_date'], '%Y-%m-%d').date(), datetime.datetime.now().date())
+    if age_days is None:
+        age_days = 0
+    age_weeks = int(age_days / 7)
+
+
     # Format the task string
-    task_formatted = f"{key.rjust(2)} {color}{icon}{Style.RESET_ALL} {description} {result_str}"
+    task_formatted = f"{key.rjust(2)} {icon_color}{icon}{Style.RESET_ALL} {description}{result_str} ({age_weeks}w) "
     return task_formatted
 
 
