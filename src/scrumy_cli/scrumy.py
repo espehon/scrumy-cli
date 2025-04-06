@@ -35,7 +35,6 @@ DEFAULT_SETTINGS = {
                         '\\',
                         '`'
                     ],
-                    'meeting_cadence': 1,
                     'editors': [
                         'vim',
                         'nano',
@@ -281,6 +280,17 @@ def create_new_meeting(meeting_name=None) -> str:
         print("Aborting...")
         sys.exit(1)
     
+    # Set meeting details
+    description = questionary.text("Enter meeting description: ").ask()
+    cadence = questionary.select("Select cadence (Meeting occurs ever [N] weeks): ", choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).ask()
+    if cadence == None or cadence == '':
+        print("Aborting...")
+        sys.exit(1)
+    meeting_details = {
+        'description': description,
+        'cadence': cadence
+    }
+    
     # Finally we can create the folder
     meeting_folder_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
 
@@ -297,6 +307,11 @@ def create_new_meeting(meeting_name=None) -> str:
             with open(task_file_path, 'w') as file:
                 json.dump({}, file, indent=4)
                 print("Tasks.json created.")
+        details_file = os.path.join(meeting_folder_path, 'Details.json').replace("\\", "/")
+        if os.path.exists(details_file) == False:
+            with open(details_file, 'w') as file:
+                json.dump(meeting_details, file, indent=4)
+                print("Details.json created.")
     except Exception as e:
         print("An error occurred while trying to create the folder or files...")
         print(e)
@@ -322,6 +337,14 @@ def render_meeting(meeting_name):
                 json.dump({}, file, indent=4)
         with open(task_file, 'r') as file:
             tasks = json.load(file)
+        
+        details_file = os.path.join(meeting_path, 'Details.json').replace("\\", "/")
+        if os.path.exists(details_file) == False:
+            with open(details_file, 'w') as file:
+                print(f"{details_file} is missing! Creating plain details file...")
+                json.dump({'description': 'Cadence: Weekly', 'cadence': 1}, file, indent=4)
+        with open(details_file, 'r') as file:
+            details = json.load(file)
 
         print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
         print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
