@@ -71,6 +71,14 @@ DEFAULT_SETTINGS = {
                             '?'
                         ]
                     },
+                    'age_color': {
+                        '0': None,
+                        '1': 'bright_white',
+                        '2': 'bright_yellow',
+                        '3': 'yellow',
+                        '4': 'bright_red',
+                        '5': 'red'
+                    },
                     'task_types': {
                         'Action Item': {
                             'statuses': {
@@ -282,13 +290,13 @@ def create_new_meeting(meeting_name=None) -> str:
     
     # Set meeting details
     description = questionary.text("Enter meeting description: ").ask()
-    cadence = questionary.select("Select cadence (Meeting occurs ever [N] weeks): ", choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).ask()
+    cadence = questionary.select("Select cadence (Meeting occurs ever [N] weeks): ", choices=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10','11', '12']).ask()
     if cadence == None or cadence == '':
         print("Aborting...")
         sys.exit(1)
     meeting_details = {
         'description': description,
-        'cadence': cadence
+        'cadence': int(cadence)
     }
     
     # Finally we can create the folder
@@ -392,6 +400,7 @@ def get_formatted_task(key, tasks) -> str:
     if age_days is None:
         age_days = 0
     age_weeks = int(age_days / 7)
+
 
 
     # Format the task string
