@@ -6,6 +6,7 @@ import sys
 import argparse
 import json
 import shutil
+import datetime
 import importlib.metadata
 
 # import copykitten
@@ -69,8 +70,69 @@ DEFAULT_SETTINGS = {
                             'help',
                             '?'
                         ]
+                    },
+                    'task_types': {
+                        'Action Item': {
+                            'statuses': {
+                                'Not Started':{
+                                    'color': 'red',
+                                    'icon': '(!)'
+                                },
+                                'Stopped': {
+                                    'color': 'bright_red',
+                                    'icon': '(.)'
+                                },
+                                'In Progress': {
+                                    'color': 'bright_yellow',
+                                    'icon': '(>)'
+                                },
+                                'Blocked': {
+                                    'color': 'bright_red',
+                                    'icon': '(X)'
+                                },
+                                'Completed': {
+                                    'color': 'bright_green',
+                                    'icon': '(√)'
+                                }
+                            },
+                        },
+                        'Question': {
+                            'statuses': {
+                                'Unanswered':{
+                                    'color': 'bright_cyan',
+                                    'icon': '(?)'
+                                },
+                                'Answered': {
+                                    'color': 'green',
+                                    'icon': '(a)'
+                                }
+                            }
+                        }
                     }
 }
+
+COLORS = {
+    'red':            Fore.RED,
+    'yellow':         Fore.YELLOW,
+    'green':          Fore.GREEN,
+    'cyan':           Fore.CYAN,
+    'blue':           Fore.BLUE,
+    'magenta':        Fore.MAGENTA,
+    'black':          Fore.BLACK,
+    'white':          Fore.WHITE,
+
+    'bright_red':     Fore.LIGHTRED_EX,
+    'bright_yellow':  Fore.LIGHTYELLOW_EX,
+    'bright_green':   Fore.LIGHTGREEN_EX, 
+    'bright_cyan':    Fore.LIGHTCYAN_EX,
+    'bright_blue':    Fore.LIGHTBLUE_EX,
+    'bright_magenta': Fore.LIGHTMAGENTA_EX,
+    'bright_black':   Fore.LIGHTBLACK_EX, 
+    'bright_white':   Fore.LIGHTWHITE_EX
+}
+
+
+
 
 
 # Set config file
@@ -78,7 +140,7 @@ config_path = os.path.expanduser("~/.config/scrumy/").replace("\\", "/")
 if os.path.exists(config_path) == False:
     print(f"Initializing config path at '{config_path}'")
     os.makedirs(config_path)
-config_path = os.path.join(config_path, 'settings.json')
+config_path = os.path.join(config_path, 'settings.json').replace("\\", "/")
 if os.path.exists(config_path) == False:
     with open(config_path, 'w') as file:
         print(f"Initializing config file at '{config_path}'")
@@ -205,17 +267,21 @@ def create_new_meeting(meeting_name=None) -> str:
         sys.exit(1)
     
     # Finally we can create the folder
-    meeting_folder_path = os.path.join(storage_folder, meeting_name)
+    meeting_folder_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
 
     try:
         if os.path.exists(meeting_folder_path) == False:
             os.makedirs(meeting_folder_path)
             print(f"{meeting_name} directory created.")
-        note_file_path = os.path.join(meeting_folder_path, 'Notes.txt')
+        note_file_path = os.path.join(meeting_folder_path, 'Notes.txt').replace("\\", "/")
         if os.path.exists(note_file_path) == False:
             with open(note_file_path, 'w'):
                 print("Notes.txt created.")
-            #TODO: create tasks file
+        task_file_path = os.path.join(meeting_folder_path, 'Tasks.json').replace("\\", "/")
+        if os.path.exists(task_file_path) == False:
+            with open(task_file_path, 'w') as file:
+                json.dump({}, file, indent=4)
+                print("Tasks.json created.")
     except Exception as e:
         print("An error occurred while trying to create the folder or files...")
         print(e)
@@ -224,17 +290,23 @@ def create_new_meeting(meeting_name=None) -> str:
 
 def render_meeting(meeting_name):
     try:
-        meeting_path = os.path.join(storage_folder, meeting_name)
+        meeting_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
         assert os.path.exists(meeting_path)
-        note_file = os.path.join(meeting_path, 'Notes.txt')
 
+        note_file = os.path.join(meeting_path, 'Notes.txt').replace("\\", "/")
         if os.path.exists(note_file) == False:
             with open(note_file, 'w') as file:
                 print(f"{note_file} is missing! Creating blank note file...")
         with open(note_file, 'r') as file:
             notes = file.read()
 
-        #TODO: check for and read in tasks file
+        task_file = os.path.join(meeting_path, 'Tasks.json').replace("\\", "/")
+        if os.path.exists(task_file) == False:
+            with open(task_file, 'w') as file:
+                print(f"{task_file} is missing! Creating blank task file...")
+                json.dump({}, file, indent=4)
+        with open(task_file, 'r') as file:
+            tasks = json.load(file)
 
         print('\n' * 4) # add some blank lines for visual padding
         print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
@@ -242,18 +314,95 @@ def render_meeting(meeting_name):
         print(notes) # Notes
         print() # Padding
         print('    ' + Fore.LIGHTWHITE_EX + '[Tasks]') # Tasks header
-        #TODO: render tasks
+        if len(tasks) == 0:
+            print('None')
+        else:
+            for task in tasks:
+                print(task)
         print() # Last padding
-
 
     except AssertionError:
         print(f"{meeting_name} not found in {storage_folder}")
         sys.exit(1)
 
 
+def index_data(current_dict: dict) -> list:
+    """
+    Return list of keys as int from data dict.
+    This is to get around the JavaScript limitation of keys being strings
+    """
+    output = []
+    for k in current_dict.keys():
+        output.append(int(k))
+    return output
+
+
+
+
+def task_mode(meeting_name):
+    """This is the task mode for the meeting.
+    This is where the user can create and edit tasks."""
+    meeting_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
+    task_file = os.path.join(meeting_path, 'Tasks.json').replace("\\", "/")
+    if os.path.exists(task_file) == False:
+        print(f"{task_file} is missing!")
+        return
+    try:
+        with open(task_file, 'r') as file:
+            tasks = json.load(file)
+    except Exception as e:
+        print("An error occurred while trying to open the file...")
+        print(e)
+    if len(tasks) == 0:
+        task_list = []
+    else:
+        task_list = list(tasks.keys())
+    task_list.append('Add new task')
+    user = questionary.select("Select task...", choices=task_list).ask()
+    if user == 'Add new task':
+        task_indies = index_data(tasks)
+        if len(task_indies) > 0:
+            next_key = max(task_indies) + 1
+        else:
+            next_key = 0
+        
+        new_task = create_new_task()
+        if type(new_task) == dict:
+            tasks[next_key] = new_task
+    
+    elif user in task_list:
+        task_index = task_list.index(user)
+        task_key = task_list[task_index]
+        task = tasks[task_key]
+        print(f"Task: {task}")
+        if questionary.confirm("Do you want to edit this task?", default=False, auto_enter=False).ask():
+            new_task = create_new_task()
+            if type(new_task) == dict:
+                tasks[task_key] = new_task
+
+def create_new_task():
+    """Create a new task for the meeting.
+    This will have several prompts and return a task object as a dictionary."""
+    task_object = {}
+    try:
+        task_object['type'] = questionary.select("Select task type...", choices=['Action Item', 'Question']).ask()
+        assert task_object['type'] != None
+        task_object['created_date'] = datetime.datetime.now().date("%Y-%m-%d")
+        task_object['completed_date'] = None
+        task_object['status'] = task_object['type']['statuses'].keys()[0]
+        task_object['description'] = questionary.text("Enter description:").ask()
+        assert len(task_object['description'] ) > 0
+        task_object['result'] = None
+        return task_object
+    except AssertionError:
+        print("Cancelled task creation.")
+        return None
+
+
+
 def rename_meeting(old_name):
     """Rename a meeting folder. This will rename the folder"""
-    old_meeting_path = os.path.join(storage_folder, old_name)
+    old_meeting_path = os.path.join(storage_folder, old_name).replace("\\", "/")
     if os.path.exists(old_meeting_path) == False:
         print(f"{old_name} not found in {storage_folder}")
         sys.exit(1)
@@ -264,7 +413,7 @@ def rename_meeting(old_name):
             print("Aborting...")
             sys.exit(1)
         assert old_name != new_name
-        new_meeting_path = os.path.join(storage_folder, new_name)
+        new_meeting_path = os.path.join(storage_folder, new_name).replace("\\", "/")
         shutil.move(old_meeting_path, new_meeting_path)  # Use shutil.move to rename the folder
         print(f"{old_name} renamed to {new_name}.")
     except AssertionError:
@@ -278,7 +427,7 @@ def rename_meeting(old_name):
 
 def delete_meeting(meeting_name):
     """Delete the meeting folder and all its contents."""
-    meeting_path = os.path.join(storage_folder, meeting_name)
+    meeting_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
     if os.path.exists(meeting_path) == False:
         print(f"{meeting_name} not found in {storage_folder}")
         sys.exit(1)
@@ -308,8 +457,6 @@ def run_meeting(meeting_name):
         while True:
             render_meeting(meeting_name)
             meeting_command_prompt(meeting_name)
-
-
     except AssertionError:
         print(f"Invalid meeting name: {meeting_name}")
         sys.exit(1)
@@ -349,8 +496,8 @@ def meeting_command_prompt(meeting_name):
 
 def edit_notes(meeting_name):
     """This will open the notes file in the default editor."""
-    meeting_path = os.path.join(storage_folder, meeting_name)
-    note_file = os.path.join(meeting_path, 'Notes.txt')
+    meeting_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
+    note_file = os.path.join(meeting_path, 'Notes.txt').replace("\\", "/")
     if os.path.exists(note_file) == False:
         print(f"{note_file} is missing!")
         return
