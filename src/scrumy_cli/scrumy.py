@@ -408,10 +408,12 @@ def get_formatted_task(key, tasks) -> str:
     return task_formatted
 
 
-def get_age_color(age: int) -> str:
-    age = str(age)
+def get_age_color(age_factor: int) -> str:
+    """Takes an integer as the age factor. This should be how many meetings have passed.
+    ie number of weeks divided by the cadence"""
+    age_factor = str(age_factor)
     try:
-        color_name = settings['age_colors'][age]
+        color_name = settings['age_colors'][age_factor]
         output = COLORS['color_name']
     except Exception as e:
         print('Age coloring failed!')
