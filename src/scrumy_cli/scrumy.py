@@ -175,6 +175,9 @@ if len(missing_settings) > 0:
         json.dump(settings, file, indent=4)
 
 
+
+
+
 # Set master folder
 storage_folder = os.path.expanduser(settings['storage_path']).replace("\\", "/")
 
@@ -374,7 +377,13 @@ def index_data(current_dict: dict) -> list:
     return output
 
 
+def get_last_key(dictionary: dict) -> str:
+    keys = list(dictionary.keys())
+    return keys[-1]
+
+
 def get_formatted_task(key, tasks, cadence) -> str:
+
     # Extract task details
     task = tasks[key]
     status = task['status']
@@ -382,6 +391,10 @@ def get_formatted_task(key, tasks, cadence) -> str:
     description = task['description']
     result = task.get('result', None)  # Default to None if result is not set
     result_str = f" : {result}" if result else ""  # Include ': {result}' only if result is not None
+
+    # Define bounds for some settings
+    max_delinquency = get_last_key(settings['age_colors'])
+    final_status = get_last_key(settings['task_types'][task_type])
 
     # Get color and icon from settings
     icon_color = COLORS[settings['task_types'][task_type]['statuses'][status]['color']]
@@ -392,8 +405,14 @@ def get_formatted_task(key, tasks, cadence) -> str:
     if age_days is None:
         age_days = 0
     age_weeks = int(age_days / 7)
-    age_delinquency = int(age_weeks / cadence) # how many times has the meeting passed
-    age_color = get_age_color(age_delinquency)
+    if status == final_status:
+        age_color = Fore.LIGHTBLACK_EX
+    else:
+        age_delinquency = int(age_weeks / cadence) # how many times has the meeting passed
+        if age_delinquency >= int(max_delinquency):
+            age_color = get_age_color(max_delinquency)
+        else:
+            age_color = get_age_color(age_delinquency)
 
 
 
