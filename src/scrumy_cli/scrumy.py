@@ -24,7 +24,7 @@ except importlib.metadata.PackageNotFoundError:
 
 DEFAULT_SETTINGS = {
                     'storage_path': '~/.local/share/scrumy/',
-                    'hightlight_tags': {
+                    'highlight_tags': {
                         '!': 'brightred',
                         '@': 'cyan',
                         '#': 'brightwhite',
@@ -72,7 +72,7 @@ DEFAULT_SETTINGS = {
                         ]
                     },
                     'age_colors': {
-                        '0': None,
+                        '0': '',
                         '1': 'bright_white',
                         '2': 'bright_yellow',
                         '3': 'yellow',
@@ -224,7 +224,7 @@ def is_meeting_foler(meeting_name):
 
 def date_difference(first_date, second_date) -> int:
     try:
-        output = first_date - second_date
+        output = second_date - first_date
         output = output.days
         assert type(output) == int
         return output
@@ -326,7 +326,7 @@ def create_new_meeting(meeting_name=None) -> str:
         sys.exit(1)
     return meeting_name
 
-def render_meeting(meeting_name):
+def render_meeting(meeting_name, description="", cadence=1):
     try:
         meeting_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
         assert os.path.exists(meeting_path)
@@ -345,14 +345,6 @@ def render_meeting(meeting_name):
                 json.dump({}, file, indent=4)
         with open(task_file, 'r') as file:
             tasks = json.load(file)
-        
-        details_file = os.path.join(meeting_path, 'Details.json').replace("\\", "/")
-        if os.path.exists(details_file) == False:
-            with open(details_file, 'w') as file:
-                print(f"{details_file} is missing! Creating plain details file...")
-                json.dump({'description': 'Cadence: Weekly', 'cadence': 1}, file, indent=4)
-        with open(details_file, 'r') as file:
-            details = json.load(file)
 
         print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
         print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
@@ -363,7 +355,7 @@ def render_meeting(meeting_name):
             print('None')
         else:
             for task in tasks:
-                print(get_formatted_task(task, tasks)) # Tasks
+                print(get_formatted_task(task, tasks, cadence=1)) # Tasks
         print() # Last padding
 
     except AssertionError:
@@ -382,7 +374,7 @@ def index_data(current_dict: dict) -> list:
     return output
 
 
-def get_formatted_task(key, tasks) -> str:
+def get_formatted_task(key, tasks, cadence) -> str:
     # Extract task details
     task = tasks[key]
     status = task['status']
@@ -400,21 +392,27 @@ def get_formatted_task(key, tasks) -> str:
     if age_days is None:
         age_days = 0
     age_weeks = int(age_days / 7)
+    age_delinquency = int(age_weeks / cadence) # how many times has the meeting passed
+    age_color = get_age_color(age_delinquency)
+
 
 
 
     # Format the task string
-    task_formatted = f"{key.rjust(2)} {icon_color}{icon}{Style.RESET_ALL} {description}{result_str} ({age_weeks}w) "
+    task_formatted = f"{age_color}{key.rjust(2)}{Style.RESET_ALL} {icon_color}{icon}{Style.RESET_ALL} {description}{result_str} {age_color}({age_weeks}w){Style.RESET_ALL} "
     return task_formatted
 
 
-def get_age_color(age_factor: int) -> str:
+def get_age_color(age_delinquency: int) -> str:
     """Takes an integer as the age factor. This should be how many meetings have passed.
     ie number of weeks divided by the cadence"""
-    age_factor = str(age_factor)
+    age_delinquency = str(age_delinquency)
     try:
-        color_name = settings['age_colors'][age_factor]
-        output = COLORS['color_name']
+        color_name = settings['age_colors'][age_delinquency]
+        if color_name == '':
+            output = ''
+        else:
+            output = COLORS[color_name]
     except Exception as e:
         print('Age coloring failed!')
         print(e)
@@ -554,11 +552,25 @@ def run_meeting(meeting_name):
     """This is the main meeting function.
     This will loop rendering the meetings then running the prompt process"""
     meeting_folders = get_meeting_folders()
+    meeting_path = os.path.join(storage_folder, meeting_name).replace("\\", "/")
+    assert os.path.exists(meeting_path)
+
+    details_file = os.path.join(meeting_path, 'Details.json').replace("\\", "/")
+    if os.path.exists(details_file) == False:
+        with open(details_file, 'w') as file:
+            print(f"{details_file} is missing! Creating plain details file...")
+            json.dump({'description': 'Cadence: Weekly', 'cadence': 1}, file, indent=4)
+    with open(details_file, 'r') as file:
+        details = json.load(file)
+    
+    description = details['description']
+    cadence = details['cadence']
+
     try:
         assert meeting_name in meeting_folders
         print('\n' * 4) # add some blank lines for visual padding
         while True:
-            render_meeting(meeting_name)
+            render_meeting(meeting_name, description=description, cadence=cadence)
             meeting_command_prompt(meeting_name)
     except AssertionError:
         print(f"Invalid meeting name: {meeting_name}")
