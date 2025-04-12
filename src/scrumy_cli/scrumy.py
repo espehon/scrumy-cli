@@ -99,7 +99,7 @@ DEFAULT_SETTINGS = {
                                     'icon': '(X)'
                                 },
                                 'Completed': {
-                                    'color': 'bright_green',
+                                    'color': 'green',
                                     'icon': '(√)'
                                 }
                             },
@@ -111,7 +111,7 @@ DEFAULT_SETTINGS = {
                                     'icon': '(?)'
                                 },
                                 'Answered': {
-                                    'color': 'green',
+                                    'color': 'bright_green',
                                     'icon': '(a)'
                                 }
                             }
@@ -390,7 +390,7 @@ def get_formatted_task(key, tasks, cadence) -> str:
     task_type = task['type']
     description = task['description']
     result = task.get('result', None)  # Default to None if result is not set
-    result_str = f" : {result}" if result else ""  # Include ': {result}' only if result is not None
+    result_str = f" -> {result}" if result else ""  # Include ': {result}' only if result is not None
 
     # Define bounds for some settings
     max_delinquency = get_last_key(settings['age_colors'])
@@ -409,6 +409,7 @@ def get_formatted_task(key, tasks, cadence) -> str:
         age_color = Fore.LIGHTBLACK_EX
         description = f"{Fore.LIGHTBLACK_EX}{description}{Style.RESET_ALL}"
     else:
+        #TODO: description = get_formatted_description(description)
         age_delinquency = int(age_weeks / cadence) # how many times has the meeting passed
         if age_delinquency >= int(max_delinquency):
             age_color = get_age_color(max_delinquency)
