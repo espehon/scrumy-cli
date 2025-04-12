@@ -394,7 +394,7 @@ def get_formatted_task(key, tasks, cadence) -> str:
 
     # Define bounds for some settings
     max_delinquency = get_last_key(settings['age_colors'])
-    final_status = get_last_key(settings['task_types'][task_type])
+    final_status = get_last_key(settings['task_types'][task_type]['statuses'])
 
     # Get color and icon from settings
     icon_color = COLORS[settings['task_types'][task_type]['statuses'][status]['color']]
@@ -407,6 +407,7 @@ def get_formatted_task(key, tasks, cadence) -> str:
     age_weeks = int(age_days / 7)
     if status == final_status:
         age_color = Fore.LIGHTBLACK_EX
+        description = f"{Fore.LIGHTBLACK_EX}{description}{Style.RESET_ALL}"
     else:
         age_delinquency = int(age_weeks / cadence) # how many times has the meeting passed
         if age_delinquency >= int(max_delinquency):
