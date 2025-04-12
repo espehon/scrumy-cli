@@ -476,9 +476,14 @@ def task_mode(meeting_name):
     
     elif user in task_list_formatted:
         task_index = str(task_list_formatted.index(user))
-        new_status = questionary.select("Update status to...", choices=settings['task_types'][tasks_json[task_index]['type']]['statuses'].keys()).ask()
+        list_of_statuses = list(settings['task_types'][tasks_json[task_index]['type']]['statuses'].keys())
+        list_of_statuses.insert(-1, 'Delete')
+        new_status = questionary.select("Update status to...", choices=list_of_statuses).ask()
         if new_status == None:
             return
+        elif new_status == 'Delete':
+            del tasks_json[task_index]
+            print(f"Task #{task_index} was deleted.")
         else:
             tasks_json[task_index]['status'] = new_status
             # Check if the new_status is the last status in the list of statuses
