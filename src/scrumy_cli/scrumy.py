@@ -349,6 +349,8 @@ def render_meeting(meeting_name, description="", cadence=1):
         with open(task_file, 'r') as file:
             tasks = json.load(file)
 
+        #TODO: check for and delete completed tasks that have aged by 1 and reorder keys
+
         print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
         print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
         print(notes) # Notes
@@ -364,6 +366,11 @@ def render_meeting(meeting_name, description="", cadence=1):
     except AssertionError:
         print(f"{meeting_name} not found in {storage_folder}")
         sys.exit(1)
+
+def clean_tasks(tasks_dict: dict) -> dict:
+    """Check for and remove completed tasks that have aged.
+    Then reorder task indices (keys)"""
+    pass
 
 
 def index_data(current_dict: dict) -> list:
