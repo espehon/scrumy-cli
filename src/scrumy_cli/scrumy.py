@@ -349,7 +349,11 @@ def render_meeting(meeting_name, description="", cadence=1):
         with open(task_file, 'r') as file:
             tasks = json.load(file)
 
-        #TODO: check for and delete completed tasks that have aged by 1 and reorder keys
+        new_tasks = clean_tasks(tasks, cadence)
+        if new_tasks != tasks:
+            tasks = new_tasks
+            with open(task_file, 'w') as file:
+                json.dump(tasks, file, indent=4)
 
         print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
         print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
@@ -367,10 +371,24 @@ def render_meeting(meeting_name, description="", cadence=1):
         print(f"{meeting_name} not found in {storage_folder}")
         sys.exit(1)
 
-def clean_tasks(tasks_dict: dict) -> dict:
-    """Check for and remove completed tasks that have aged.
+def clean_tasks(tasks_dict: dict, cadence: int=1) -> dict:
+    """Check for and remove completed tasks that have aged twice the cadence.
     Then reorder task indices (keys)"""
-    pass
+    # Iterate over a copy of the dictionary keys to avoid modifying the dictionary while iterating
+    for key in list(tasks_dict.keys()):
+        task = tasks_dict[key]
+        if task['completed_date'] is not None:
+            # Check if the task has aged by 1 cadence
+            age_days = date_difference(datetime.datetime.strptime(task['completed_date'], '%Y-%m-%d').date(), datetime.datetime.now().date())
+            if age_days is not None:
+                age_weeks = int(age_days / 7)
+                if age_weeks >= (cadence * 2):
+                    del tasks_dict[key]
+    # Reorder task indices (keys)
+    new_tasks_dict = {}
+    for i, task in enumerate(tasks_dict):
+        new_tasks_dict[str(i)] = tasks_dict[task]
+    return new_tasks_dict
 
 
 def index_data(current_dict: dict) -> list:
