@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"               # Boilerplate
 
 [project]
 name = "scrumy-cli"                                 # Your pip install <name> (must be unique)
-version = "0.1"                                     # Must be manually updated here with every change
+version = "0.2"                                     # Must be manually updated here with every change
 authors = [
 	{ name="espehon", email="espehon@gmail.com" },      # Email is optional (as array?)
 ]
@@ -12,11 +12,12 @@ description = "CLI for scrum meetings"                  # Header on PyPI (above 
 readme = "README.md"                                    # Boilerplate and will be added to the PyPI page
 requires-python = ">=3.8"                               # Python version
 dependencies = [                                        # Any site-package dependencies (as a list)
-	"colorama >= 0.4.6"                                 # NOTE: if any given, the pip test will be different
+	"colorama >= 0.4.6",                                 # NOTE: if any given, the pip test will be different
+	"questionary >= 2.1.0"
 ]
 classifiers = [                                       # Kinda boilerplate. Used as hashtags really
 	"Programming Language :: Python :: 3",            # Tweak this to match your project
-	"Development Status :: 3 - Alpha",                # https://pypi.org/classifiers/
+	"Development Status :: 4 - Beta",                # https://pypi.org/classifiers/
 	"Environment :: Console",
 	"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 	"Operating System :: OS Independent",
@@ -24,7 +25,7 @@ classifiers = [                                       # Kinda boilerplate. Used 
 ]
 
 [project.scripts]                               # The entrypoint for CLI app (if needed)
-chksum = "scrumy_cli.scrumy:cli"                # SYNTAX: <commandlet> = "folder.file:function"
+scrumy = "scrumy_cli.scrumy:cli"                # SYNTAX: <commandlet> = "folder.file:function"
                                                 # def main in __main__ and place in if name check
 [project.urls]
 "Homepage" = "https://github.com/espehon/scrumy-cli"              # Boilerplate links to GitHub repo

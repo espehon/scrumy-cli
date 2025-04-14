@@ -196,11 +196,11 @@ terminal_width = os.get_terminal_size().columns
 
 # Set argument parsing
 parser = argparse.ArgumentParser(
-    description="Scrumy: Agile meeting notes and tasks from the commandline!",
-    epilog="(scrum with no arguments will start interactive selection)\n\nExample:\n> todo -n pi 3.14159265359\n> fet pi\n3.14159265359\n\nHomepage: https://github.com/espehon/fetchy-cli",
+    description="Scrumy: Run agile meetings with interactive notes and tasks from the commandline!",
+    epilog="(scrumy with no arguments will start interactive selection)\n\nHomepage: https://github.com/espehon/scrumy-cli",
     allow_abbrev=False,
     add_help=False,
-    usage="todo [Name] [-n Name Value] [-c Name] [-d Name1 ...] [-r OldName NewName] [-l] [-?] ",
+    usage="scrumy [Name] [-n Name] [-r Name] [-d Name] [-l] [-?] ",
     formatter_class=argparse.RawTextHelpFormatter
 )
 
@@ -210,7 +210,7 @@ parser.add_argument('-l', '--list', action='store_true', help='List meetings and
 parser.add_argument('-n', '--new', nargs='?', type=str, metavar='N', action='store', default=False, help='Create new meeting. Named [N] if supplied.')
 parser.add_argument('-r', '--rename', nargs=1, type=str, metavar='O', action='store', help='Rename [O]. (Will prompt for new name)')
 parser.add_argument('-d', '--delete', nargs=1, type=str, metavar='N', action='store', help='Delete [N].')
-parser.add_argument("name", nargs='?', help="Name of meeting to view. (Case sensitive)")
+parser.add_argument("name", nargs='?', help="Name of meeting to start. (Case sensitive)")
 
 def get_meeting_folders():
     """Get all meeting folders in the storage folder.
@@ -284,11 +284,12 @@ def create_new_meeting(meeting_name=None) -> str:
 
     if meeting_name == None:
         meeting_name = questionary.text("Enter the new meeting's name:").ask()
+        if meeting_name == None or meeting_name == '':
+            sys.exit(1)
     
     # Data validation
     meeting_name = meeting_name_validation(meeting_name)
     if meeting_name == False or meeting_name == None:
-        print("Aborting...")
         sys.exit(1)
     
     # Set meeting details
@@ -355,7 +356,8 @@ def render_meeting(meeting_name, description="", cadence=1):
             with open(task_file, 'w') as file:
                 json.dump(tasks, file, indent=4)
 
-        print(f"{'═'*20}{Fore.LIGHTWHITE_EX}{meeting_name}{Style.RESET_ALL}".ljust(terminal_width, '═')) # Title
+        print() # padding
+        print(f"{'─'*20}{Fore.LIGHTWHITE_EX}{meeting_name}{Style.RESET_ALL}".ljust(terminal_width, '─')) # Title. Another line option is ═
         print(f"{description}    (Cadence: Every {cadence} weeks)")
         
         print(f"────{Fore.LIGHTWHITE_EX}[Notes]{Style.RESET_ALL}") # Notes header
