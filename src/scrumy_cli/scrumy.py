@@ -693,7 +693,7 @@ def edit_notes(meeting_name):
 
 def cli(argv=None):
     args = parser.parse_args(argv) #Execute parse_args()
-    print(args)
+    # print(args)
     if len(sys.argv) == 1:
         meeting_name = interactive_select()
         run_meeting(meeting_name)
