@@ -293,7 +293,7 @@ def create_new_meeting(meeting_name=None) -> str:
     
     # Set meeting details
     description = questionary.text("Enter meeting description: ").ask()
-    cadence = questionary.select("Select cadence (Meeting occurs ever [N] weeks): ", choices=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10','11', '12']).ask()
+    cadence = questionary.select("Select cadence (Meeting occurs every [N] weeks): ", choices=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10','11', '12']).ask()
     if cadence == None or cadence == '':
         print("Aborting...")
         sys.exit(1)
@@ -355,11 +355,16 @@ def render_meeting(meeting_name, description="", cadence=1):
             with open(task_file, 'w') as file:
                 json.dump(tasks, file, indent=4)
 
-        print((Fore.LIGHTWHITE_EX + meeting_name + Style.RESET_ALL).center(terminal_width, '─')) # Title
-        print('    ' + Fore.LIGHTWHITE_EX + '[Notes]') # Notes header
-        print(notes) # Notes
-        print() # Padding
-        print('    ' + Fore.LIGHTWHITE_EX + '[Tasks]') # Tasks header
+        print(f"{'═'*20}{Fore.LIGHTWHITE_EX}{meeting_name}{Style.RESET_ALL}".ljust(terminal_width, '═')) # Title
+        print(f"{description}    (Cadence: Every {cadence} weeks)")
+        
+        print(f"────{Fore.LIGHTWHITE_EX}[Notes]{Style.RESET_ALL}") # Notes header
+        if len(notes) == 0:
+            print('None')
+        else:
+            print(notes)
+
+        print(f"────{Fore.LIGHTWHITE_EX}[Tasks]{Style.RESET_ALL}") # Tasks header
         if len(tasks) == 0:
             print('None')
         else:
