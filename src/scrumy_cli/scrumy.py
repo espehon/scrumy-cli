@@ -414,6 +414,36 @@ def get_last_key(dictionary: dict) -> str:
     return keys[-1]
 
 
+def get_formatted_text(text: str="") -> str:
+    formatted_text = ""
+    i = 0
+    highlight_mode = False
+
+    while i < len(text):
+        if highlight_mode is True:
+            if text[i] == ' ' or text[i] == '\\':
+                formatted_text += Style.RESET_ALL
+                formatted_text += text[i]
+                highlight_mode = False
+            else:
+                formatted_text += text[i]
+        elif i == 0:
+            if text[i] in settings['highlight_tags']:
+                formatted_text += COLORS[settings['highlight_tags'][text[i]]]
+                highlight_mode = True
+        elif text[i] in settings['escape_characters'] and text[i + 1] < len(text) and text[i + 1] in settings['highlight_tags']:
+            pass
+        elif text[i] in settings['highlight_tags'] and text[i - 1] in settings['escape_characters']:
+            formatted_text += text[i]
+        elif text[i] in settings['highlight_tags']:
+            formatted_text += COLORS[settings['highlight_tags'][text[i]]]
+            highlight_mode = True
+        else:
+            formatted_text += text[i]
+        i +=1
+            
+
+
 def get_formatted_task(key, tasks, cadence) -> str:
 
     # Extract task details
