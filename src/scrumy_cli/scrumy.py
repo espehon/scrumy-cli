@@ -25,11 +25,11 @@ except importlib.metadata.PackageNotFoundError:
 DEFAULT_SETTINGS = {
                     'storage_path': '~/.local/share/scrumy/',
                     'highlight_tags': {
-                        '!': 'brightred',
-                        '@': 'cyan',
-                        '#': 'brightwhite',
-                        '$': 'brightgreen',
-                        '%': 'brightyellow'
+                        '!': 'bright_red',
+                        '@': 'bright_cyan',
+                        '#': 'bright_white',
+                        '$': 'bright_green',
+                        '%': 'bright_yellow'
                     },
                     'escape_characters': [
                         '\\',
@@ -364,7 +364,7 @@ def render_meeting(meeting_name, description="", cadence=1):
         if len(notes) == 0:
             print('None')
         else:
-            print(notes)
+            print(get_formatted_text(notes))
 
         print(f"────{Fore.LIGHTWHITE_EX}[Tasks]{Style.RESET_ALL}") # Tasks header
         if len(tasks) == 0:
@@ -421,7 +421,7 @@ def get_formatted_text(text: str="") -> str:
 
     while i < len(text):
         if highlight_mode is True:
-            if text[i] == ' ' or text[i] == '\\':
+            if text[i] in [' ', '\n', '\t', '\\', ',', '.', ':', ';', '!']:
                 formatted_text += Style.RESET_ALL
                 formatted_text += text[i]
                 highlight_mode = False
@@ -431,7 +431,7 @@ def get_formatted_text(text: str="") -> str:
             if text[i] in settings['highlight_tags']:
                 formatted_text += COLORS[settings['highlight_tags'][text[i]]]
                 highlight_mode = True
-        elif text[i] in settings['escape_characters'] and text[i + 1] < len(text) and text[i + 1] in settings['highlight_tags']:
+        elif text[i] in settings['escape_characters'] and (i + 1) < len(text) and text[i + 1] in settings['highlight_tags']:
             pass
         elif text[i] in settings['highlight_tags'] and text[i - 1] in settings['escape_characters']:
             formatted_text += text[i]
@@ -441,6 +441,7 @@ def get_formatted_text(text: str="") -> str:
         else:
             formatted_text += text[i]
         i +=1
+    return formatted_text
             
 
 
@@ -471,7 +472,7 @@ def get_formatted_task(key, tasks, cadence) -> str:
         age_color = Fore.LIGHTBLACK_EX
         description = f"{Fore.LIGHTBLACK_EX}{description}{Style.RESET_ALL}"
     else:
-        #TODO: description = get_formatted_description(description)
+        description = get_formatted_text(description)
         age_delinquency = int(age_weeks / cadence) # how many times has the meeting passed
         if age_delinquency >= int(max_delinquency):
             age_color = get_age_color(max_delinquency)
