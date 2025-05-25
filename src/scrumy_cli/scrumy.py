@@ -443,6 +443,8 @@ def get_formatted_text(text: str="") -> str:
         else:
             formatted_text += text[i]
         i +=1
+    if highlight_mode is True:
+        formatted_text += Style.RESET_ALL
     return formatted_text
             
 
@@ -581,7 +583,7 @@ def create_new_task():
         task_object['completed_date'] = None
         task_object['status'] = list(settings['task_types'][task_object['type']]['statuses'].keys())[0]
         # task_object['icon'] = task_object['type']['statuses'][task_object['status']]['icon']
-        task_object['description'] = questionary.text("Enter description:").ask()
+        task_object['description'] = str(questionary.text("Enter description:").ask()).strip()
         assert len(task_object['description'] ) > 0
         task_object['result'] = None
         return task_object
