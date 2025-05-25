@@ -431,6 +431,8 @@ def get_formatted_text(text: str="") -> str:
             if text[i] in settings['highlight_tags']:
                 formatted_text += COLORS[settings['highlight_tags'][text[i]]]
                 highlight_mode = True
+            else:
+                formatted_text += text[i]
         elif text[i] in settings['escape_characters'] and (i + 1) < len(text) and text[i + 1] in settings['highlight_tags']:
             pass
         elif text[i] in settings['highlight_tags'] and text[i - 1] in settings['escape_characters']:
